@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora Flow Browser</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+    <style>
+        :root {
+            --bg: #030305;
+            --bar: rgba(20, 20, 25, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #8b5cf6;
+            --accent: #f43f5e;
+            /* Rose */
+            --glass: rgba(255, 255, 255, 0.03);
+            --text: #fff;
+            --font: 'Outfit', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font);
+            outline: none;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NEBULA */
+        #nebula {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 30% 20%, rgba(139, 92, 246, 0.1), transparent 40%),
+                radial-gradient(circle at 70% 80%, rgba(244, 63, 94, 0.1), transparent 40%);
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* VIEWPORT */
+        #viewport {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* DASHBOARD */
+        #dashboard {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #dashboard.minimized {
+            transform: scale(1.1);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: -3px;
+            margin-bottom: 30px;
+            background: linear-gradient(to right, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+        }
+
+        /* SEARCH HERO */
+        .search-container {
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            z-index: 50;
+        }
+
+        .search-hero {
+            width: 100%;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+            transition: 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-hero:focus-within {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        #heroIn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        /* LIVE SUGGESTIONS */
+        #suggestions {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        #suggestions.show {
+            display: flex;
+            animation: slideDown 0.2s;
+        }
+
+        .sug-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            color: #a1a1aa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .sug-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* SHORTCUT GRID */
+        #shortcutGrid {
+            margin-top: 50px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 20px;
+            width: 90%;
+            max-width: 600px;
+            justify-items: center;
+        }
+
+        .shortcut {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .shortcut:hover {
+            transform: translateY(-5px);
+        }
+
+        .sc-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+
+        .sc-name {
+            font-size: 0.8rem;
+            color: #71717a;
+            text-align: center;
+        }
+
+        .del-btn {
+            position: absolute;
+            top: -5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .shortcut:hover .del-btn {
+            display: flex;
+        }
+
+        /* ADD SHORTCUT MODAL */
+        #addModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-box {
+            width: 300px;
+            background: #18181b;
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .m-inp {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+        }
+
+        /* BROWSER VIEW */
+        #browserView {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.5s;
+        }
+
+        #browserView.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #topBar {
+            height: 50px;
+            background: var(--bar);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
+            backdrop-filter: blur(20px);
+        }
+
+        .url-box {
+            flex: 1;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 0.9rem;
+        }
+
+        .url-box:focus-within {
+            border-color: var(--primary);
+        }
+
+        #urlIn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            margin-left: 10px;
+        }
+
+        #frameWrap {
+            flex: 1;
+            position: relative;
+            background: #fff;
+        }
+
+        #frameWrap.dark iframe {
+            filter: invert(0.9) hue-rotate(180deg);
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* SIDEBAR */
+        #aiSide {
+            position: fixed;
+            top: 50px;
+            bottom: 0;
+            right: -350px;
+            width: 350px;
+            background: rgba(15, 15, 20, 0.95);
+            border-left: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 60;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #aiSide.open {
+            right: 0;
+        }
+
+        .chat-zone {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg {
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            max-width: 90%;
+        }
+
+        .msg.u {
+            align-self: flex-end;
+            background: #27272a;
+        }
+
+        .msg.a {
+            align-self: flex-start;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .tools-zone {
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .t-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: none;
+            color: #a1a1aa;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .t-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: #a1a1aa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="nebula"></div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard">
+        <div class="logo">AURORA</div>
+
+        <div class="search-container">
+            <div class="search-hero">
+                <i data-lucide="search" color="#a1a1aa"></i>
+                <input id="heroIn" placeholder="Ara veya URL yaz..." onkeyup="handleSuggest(event)"
+                    onkeydown="if(event.key==='Enter') goBrowser(this.value)">
+            </div>
+            <div id="suggestions"></div>
+        </div>
+
+        <div id="shortcutGrid">
+            <!-- Shortcuts JS -->
+        </div>
+    </div>
+
+    <!-- BROWSER -->
+    <div id="browserView">
+        <div id="topBar">
+            <button class="btn-icon" onclick="goHome()"><i data-lucide="home" width="18"></i></button>
+            <button class="btn-icon" onclick="reload()"><i data-lucide="rotate-cw" width="16"></i></button>
+
+            <div class="url-box">
+                <i data-lucide="shield" width="14" color="#10b981"></i>
+                <input id="urlIn" onkeydown="if(event.key==='Enter') navigate(this.value)">
+            </div>
+
+            <button class="btn-icon" onclick="toggleDark()"><i data-lucide="moon" width="18"></i></button>
+            <button class="btn-icon" onclick="toggleAi()"><i data-lucide="bot" width="18" color="#8b5cf6"></i></button>
+        </div>
+
+        <div id="frameWrap" class="dark">
+            <iframe id="webFrame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+        </div>
+    </div>
+
+    <!-- AI PANEL -->
+    <div id="aiSide">
+        <div
+            style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; color:#fff;">Aurora AI</span>
+            <button class="btn-icon" onclick="toggleAi()"><i data-lucide="x" width="16"></i></button>
+        </div>
+        <div id="aiChat" class="chat-zone">
+            <div class="msg a">Merhaba! Yan panelden tarayıcıya eşlik ediyorum.</div>
+        </div>
+        <div style="padding:10px; display:flex; gap:10px;">
+            <input id="aiMsg"
+                style="flex:1; padding:10px; border-radius:8px; border:none; background:#27272a; color:white;"
+                placeholder="..." onkeydown="if(event.key==='Enter') sendAi()">
+            <button class="btn-icon" onclick="sendAi()"><i data-lucide="send" width="16"></i></button>
+        </div>
+        <div class="tools-zone">
+            <button class="t-btn" onclick="quickAi('summarize')"><i data-lucide="file-text" width="14"></i>
+                Özetle</button>
+            <button class="t-btn" onclick="quickAi('explain')"><i data-lucide="lightbulb" width="14"></i>
+                Açıkla</button>
+            <button class="t-btn" onclick="quickAi('code')"><i data-lucide="code" width="14"></i> Kod Yaz</button>
+            <button class="t-btn" onclick="quickAi('translate')"><i data-lucide="languages" width="14"></i>
+                Çevir</button>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="addModal">
+        <div class="modal-box">
+            <h3 style="color:white;">Kısayol Ekle</h3>
+            <input id="nName" class="m-inp" placeholder="İsim">
+            <input id="nUrl" class="m-inp" placeholder="URL (https://...)">
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="t-btn" onclick="document.getElementById('addModal').style.display='none'">İptal</button>
+                <button class="t-btn" style="background:var(--primary); color:white;"
+                    onclick="saveShortcut()">Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const GROQ = "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";
+        const proxy = "https://corsproxy.io/?";
+
+        // STATE
+        let shortcuts = JSON.parse(localStorage.getItem('aurora_shortcuts')) || [
+            { name: 'YouTube', url: 'https://youtube.com', icon: 'youtube' },
+            { name: 'ChatGPT', url: 'https://chatgpt.com', icon: 'bot' },
+        ];
+
+        // INIT
+        renderShortcuts();
+
+        // 1. DASHBOARD FLOW
+        function handleSuggest(e) {
+            const v = e.target.value;
+            const s = document.getElementById('suggestions');
+            if (!v) { s.classList.remove('show'); return; }
+
+            // Fake Suggestions + History
+            const hist = ['teknoloji haberleri', 'aurora nedir', 'google translate', 'chatgpt login'];
+            const matches = hist.filter(x => x.includes(v.toLowerCase()));
+
+            s.innerHTML = '';
+            matches.forEach(m => {
+                s.innerHTML += `<div class="sug-item" onclick="goBrowser('${m}')"><i data-lucide="search" width="14"></i> ${m}</div>`;
+            });
+            // Google Link
+            s.innerHTML += `<div class="sug-item" onclick="goBrowser('${v}')" style="color:var(--primary)"><i data-lucide="arrow-right" width="14"></i> "${v}" Ara</div>`;
+
+            s.classList.add('show');
+            lucide.createIcons();
+        }
+
+        function goBrowser(q) {
+            document.getElementById('dashboard').classList.add('minimized');
+            document.getElementById('browserView').classList.add('active');
+            navigate(q);
+        }
+
+        function goHome() {
+            document.getElementById('dashboard').classList.remove('minimized');
+            document.getElementById('browserView').classList.remove('active');
+            document.getElementById('webFrame').src = 'about:blank';
+        }
+
+        // 2. NAV ENGINE
+        function navigate(q) {
+            document.getElementById('urlIn').value = q;
+            const frame = document.getElementById('webFrame');
+
+            let url = "";
+            if (q.includes('.') && !q.includes(' ')) {
+                url = q.startsWith('http') ? q : 'https://' + q;
+            } else {
+                url = `https://www.google.com/search?igu=1&q=${encodeURIComponent(q)}`;
+            }
+
+            // STEALTH LOGIC
+            // Auto-proxy commonly blocked sites
+            if (url.includes('chatgpt') || url.includes('discord')) {
+                frame.src = proxy + encodeURIComponent(url);
+            } else if (url.includes('youtube.com/watch')) {
+                frame.src = url.replace('watch?v=', 'embed/');
+            } else {
+                frame.src = url;
+            }
+        }
+
+        function reload() { document.getElementById('webFrame').contentWindow.location.reload(); }
+        function toggleDark() { document.getElementById('frameWrap').classList.toggle('dark'); }
+
+        // 3. SHORTCUTS
+        function renderShortcuts() {
+            const g = document.getElementById('shortcutGrid');
+            g.innerHTML = '';
+            shortcuts.forEach((s, idx) => {
+                let ic = `<span style="font-weight:700">${s.name[0]}</span>`;
+                if (s.icon) ic = `<i data-lucide="${s.icon}"></i>`;
+
+                g.innerHTML += `
+                    <div class="shortcut" onclick="goBrowser('${s.url}')">
+                        <div class="sc-icon">${ic}</div>
+                        <span class="sc-name">${s.name}</span>
+                        <div class="del-btn" onclick="event.stopPropagation(); delSc(${idx})">x</div>
+                    </div>
+                `;
+            });
+            // Add Button
+            g.innerHTML += `
+                <div class="shortcut" onclick="openAdd()">
+                    <div class="sc-icon" style="border-style:dashed; opacity:0.5;"><i data-lucide="plus"></i></div>
+                    <span class="sc-name">Ekle</span>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function openAdd() { document.getElementById('addModal').style.display = 'flex'; }
+        function saveShortcut() {
+            const n = document.getElementById('nName').value;
+            const u = document.getElementById('nUrl').value;
+            if (n && u) {
+                shortcuts.push({ name: n, url: u });
+                localStorage.setItem('aurora_shortcuts', JSON.stringify(shortcuts));
+                renderShortcuts();
+                document.getElementById('addModal').style.display = 'none';
+            }
+        }
+        function delSc(i) {
+            shortcuts.splice(i, 1);
+            localStorage.setItem('aurora_shortcuts', JSON.stringify(shortcuts));
+            renderShortcuts();
+        }
+
+        // 4. AI SIDEBAR
+        function toggleAi() { document.getElementById('aiSide').classList.toggle('open'); }
+
+        async function sendAi() {
+            const i = document.getElementById('aiMsg');
+            const t = i.value; if (!t) return;
+            addMsg(t, 'u'); i.value = '';
+
+            const l = addMsg('...', 'a');
+            try {
+                const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${GROQ}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: t }] })
+                });
+                const d = await r.json();
+                l.innerHTML = marked.parse(d.choices[0].message.content);
+            } catch { l.innerText = "Err"; }
+        }
+
+        async function quickAi(act) {
+            const t = document.getElementById('urlIn').value;
+            addMsg(`${act.toUpperCase()}: ${t}`, 'u');
+            // Mock context
+            let p = "";
+            if (act === 'summarize') p = `Bu konuyu özetle: "${t}"`;
+            if (act === 'explain') p = `Bu konuyu açıkla (kavram olarak): "${t}"`;
+            if (act === 'code') p = `Bununla ilgili örnek kod yaz: "${t}"`;
+            if (act === 'translate') p = `Bunu İngilizceye çevir: "${t}"`;
+
+            const l = addMsg('...', 'a');
+            const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${GROQ}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
+            });
+            const d = await r.json();
+            l.innerHTML = marked.parse(d.choices[0].message.content);
+        }
+
+        function addMsg(t, r) {
+            const d = document.createElement('div'); d.className = `msg ${r}`; d.innerHTML = t;
+            document.getElementById('aiChat').appendChild(d);
+            return d;
+        }
+
+    </script>
+</body>
+
+</html>
